@@ -52,7 +52,7 @@ namespace COMP4560_asgn5 {
             m.matrix[3, 2] = z;
             return m;
         }
-
+        
         public static Matrix scaleMatrix(double x, double y, double z)
         {
             Matrix m = new Matrix();
@@ -62,6 +62,14 @@ namespace COMP4560_asgn5 {
             return m;
         }
 
+        /// <summary>
+        /// Generates a matrix representing a counter-clockwise rotation 
+        /// around the origin when looking from the positive axis given.
+        /// </summary>
+        /// <param name="a">The axis of rotation. Counter-clockwise is 
+        /// determined by looking from this point toward the origin.</param>
+        /// <param name="theta">The angle of rotation in radians.</param>
+        /// <returns>A new matrix representing the given rotation.</returns>
         public static Matrix rotateMatrix(Axis a, double theta)
         {
             Matrix m = new Matrix();
@@ -73,8 +81,8 @@ namespace COMP4560_asgn5 {
                 case Axis.X:
                     m.matrix[1, 1] = cos;
                     m.matrix[2, 2] = cos;
-                    m.matrix[1, 2] = -sin;
-                    m.matrix[2, 1] = sin;
+                    m.matrix[1, 2] = sin;
+                    m.matrix[2, 1] = -sin;
                     break;
                 case Axis.Y:
                     m.matrix[0, 0] = cos;
@@ -85,8 +93,8 @@ namespace COMP4560_asgn5 {
                 case Axis.Z:
                     m.matrix[0, 0] = cos;
                     m.matrix[1, 1] = cos;
-                    m.matrix[0, 1] = -sin;
-                    m.matrix[1, 0] = sin;
+                    m.matrix[0, 1] = sin;
+                    m.matrix[1, 0] = -sin;
                     break;
             }
             return m;
@@ -107,6 +115,31 @@ namespace COMP4560_asgn5 {
                     }
                 }
             }
+            return result;
+        }
+
+        public static Vec4 operator *(Vec4 lhs, Matrix rhs) {
+            Vec4 result = new Vec4(0, 0, 0);
+            result.x
+                = rhs.matrix[0, 0] * lhs.x
+                + rhs.matrix[1, 0] * lhs.y
+                + rhs.matrix[2, 0] * lhs.z
+                + rhs.matrix[3, 0] * lhs.w;
+            result.y
+                = rhs.matrix[0, 1] * lhs.x
+                + rhs.matrix[1, 1] * lhs.y
+                + rhs.matrix[2, 1] * lhs.z
+                + rhs.matrix[3, 1] * lhs.w;
+            result.z
+                = rhs.matrix[0, 2] * lhs.x
+                + rhs.matrix[1, 2] * lhs.y
+                + rhs.matrix[2, 2] * lhs.z
+                + rhs.matrix[3, 2] * lhs.w;
+            result.w
+                = rhs.matrix[0, 3] * lhs.x
+                + rhs.matrix[1, 3] * lhs.y
+                + rhs.matrix[2, 3] * lhs.z
+                + rhs.matrix[3, 3] * lhs.w;
             return result;
         }
 
