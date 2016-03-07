@@ -16,8 +16,10 @@ namespace COMP4560_asgn5 {
         }
         public Vec4(double x, double y, double z) : this(x, y, z, 1.0) { }
         public Vec4(Vec3 v) : this(v.x, v.y, v.z, 1.0) { }
-
-
+        
+        public static Vec4 operator -(Vec4 unary) {
+            return new Vec4(-unary.x, -unary.y, -unary.z, -unary.w);
+        }
 
         public static bool operator ==(Vec4 lhs, Vec4 rhs) {
             return lhs.Equals(rhs);

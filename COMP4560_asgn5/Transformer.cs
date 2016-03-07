@@ -17,7 +17,10 @@ namespace COMP4560_asgn5 {
         bool gooddata = false;
         double[,] vertices;
         double[,] scrnpts;
-        double[,] ctrans = new double[4, 4];  //your main transformation matrix
+        Matrix Tnet = new Matrix();  //your main transformation matrix
+        Matrix Shear;
+        Matrix Center;
+        Matrix Global;
         int[,] lines;
 
         public Transformer() {
@@ -32,7 +35,7 @@ namespace COMP4560_asgn5 {
             this.SetStyle(ControlStyles.AllPaintingInWmPaint, true);
             this.SetStyle(ControlStyles.UserPaint, true);
             this.SetStyle(ControlStyles.DoubleBuffer, true);
-            Text = "COMP 4560:  Assignment 5 (200830) (Your Name Here)";
+            Text = "COMP 4560:  Assignment 5 (200830) (Joe Pelz)";
             ResizeRedraw = true;
             BackColor = Color.Black;
             MenuItem miNewDat = new MenuItem("New &Data...",
@@ -53,15 +56,18 @@ namespace COMP4560_asgn5 {
             double temp;
             int k;
 
+
             if (gooddata) {
                 //create the screen coordinates:
                 // scrnpts = vertices*ctrans
+                double[,] mt = Tnet.getArray();
+
 
                 for (int i = 0; i < numpts; i++) {
                     for (int j = 0; j < 4; j++) {
                         temp = 0.0d;
                         for (k = 0; k < 4; k++)
-                            temp += vertices[i, k] * ctrans[k, j];
+                            temp += vertices[i, k] * mt[k, j];
                         scrnpts[i, j] = temp;
                     }
                 }
@@ -96,7 +102,25 @@ namespace COMP4560_asgn5 {
             if (gooddata) {
                 BBox bbox = new BBox(vertices);
                 Vec3 mid = bbox.getCenter();
+                Rectangle r = this.ClientRectangle;
+                r.Width -= toolBar1.Width;
+                Center = new Matrix();
+                Global = new Matrix();
+                Shear = new Matrix();
+
+                //Center and orient shape correctly
+                Center.translate(-mid);
+                Center.scale(1, -1, 1);
+
+                //Resize shape to be 1/3 of min client area
+                double factorx = r.Width / ((bbox.xmax - bbox.xmin) * 2);
+                double factory = r.Height / ((bbox.ymax - bbox.ymin) * 2);
+                Global.scale(Math.Min(factory, factorx));
+
+                //Center shape on screen
+                Global.translate((r.Width) / 2, r.Height / 2, 0);
             }
+            Tnet = Center * Global;
             Invalidate();
         } // end of RestoreInitialImage
 
@@ -137,7 +161,6 @@ namespace COMP4560_asgn5 {
                 return false;
             }
             scrnpts = new double[numpts, 4];
-            setIdentity(ctrans, 4, 4);  //initialize transformation matrix to identity
             return true;
         } // end of GetNewData
 
@@ -178,40 +201,70 @@ namespace COMP4560_asgn5 {
                 A[i, i] = 1.0d;
             }
         }// end of setIdentity
-
-
+        
         private void Transformer_Load(object sender, System.EventArgs e) {
 
         }
 
+        public override void Refresh() {
+            Tnet = Shear * Center * Global;
+            base.Refresh();
+        }
+
         private void toolBar1_ButtonClick(object sender, System.Windows.Forms.ToolBarButtonClickEventArgs e) {
+            Vec3 offset;
+
             if (e.Button == transleftbtn) {
+                Global.translate(-75, 0, 0);
                 Refresh();
             }
             if (e.Button == transrightbtn) {
+                Global.translate(75, 0, 0);
                 Refresh();
             }
             if (e.Button == transupbtn) {
+                Global.translate(0, -35, 0);
+                Refresh();
+            }
+            if (e.Button == transdownbtn) {
+                Global.translate(0, 35, 0);
                 Refresh();
             }
 
-            if (e.Button == transdownbtn) {
-                Refresh();
-            }
             if (e.Button == scaleupbtn) {
+                offset = Global.getTranslate();
+                Global.translate(-offset);
+                Global.scale(1.1);
+                Global.translate(offset);
                 Refresh();
             }
             if (e.Button == scaledownbtn) {
+                offset = Global.getTranslate();
+                Global.translate(-offset);
+                Global.scale(0.9);
+                Global.translate(offset);
                 Refresh();
             }
             if (e.Button == rotxby1btn) {
-
+                offset = Global.getTranslate();
+                Global.translate(-offset);
+                Global.rotate(Matrix.Axis.X, 0.05);
+                Global.translate(offset);
+                Refresh();
             }
             if (e.Button == rotyby1btn) {
-
+                offset = Global.getTranslate();
+                Global.translate(-offset);
+                Global.rotate(Matrix.Axis.Y, 0.05);
+                Global.translate(offset);
+                Refresh();
             }
             if (e.Button == rotzby1btn) {
-
+                offset = Global.getTranslate();
+                Global.translate(-offset);
+                Global.rotate(Matrix.Axis.Z, 0.05);
+                Global.translate(offset);
+                Refresh();
             }
 
             if (e.Button == rotxbtn) {
@@ -226,10 +279,12 @@ namespace COMP4560_asgn5 {
             }
 
             if (e.Button == shearleftbtn) {
+                Shear.shear(-0.1);
                 Refresh();
             }
 
             if (e.Button == shearrightbtn) {
+                Shear.shear(0.1);
                 Refresh();
             }
 
@@ -240,7 +295,6 @@ namespace COMP4560_asgn5 {
             if (e.Button == exitbtn) {
                 Close();
             }
-
         }
     }
 }

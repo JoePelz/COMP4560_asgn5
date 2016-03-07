@@ -91,5 +91,25 @@ namespace MatrixTester {
             Console.WriteLine("Z axis * mrny = " + (zAxis * mrny));
             Assert.IsTrue(nxAxis == zAxis * mrny, "mry rotation Failed.");
         }
+
+        [TestMethod]
+        public void TestMatrixAugments() {
+            Vec4 a = new Vec4(1, 1, 1);
+            Matrix m = new Matrix();
+            Vec4 expected = new Vec4(1, 1, 1);
+            Assert.IsTrue(expected == a * m, "identity matrix failed.");
+
+            m.translate(1, 2, 3);
+            expected = new Vec4(2, 3, 4);
+            Assert.IsTrue(expected == a * m, "translate matrix failed.");
+
+            m.scale(-3, 2, -1.5);
+            expected = new Vec4(-6, 6, -6);
+            Assert.IsTrue(expected == a * m, "scale matrix failed.");
+
+            m.rotate(Matrix.Axis.Y, Math.PI);
+            expected = new Vec4(6, 6, 6);
+            Assert.IsTrue(expected == a * m, "rotate matrix failed.");
+        }
     }
 }

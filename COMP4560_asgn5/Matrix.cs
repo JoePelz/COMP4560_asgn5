@@ -7,6 +7,9 @@ namespace COMP4560_asgn5 {
     {
         public enum Axis { X, Y, Z };
 
+        /// <summary>
+        /// A 4x4 matrix, where the first coordinate is the row, and the second is the column.
+        /// </summary>
         double[,] matrix;
 
         /// <summary>
@@ -44,6 +47,11 @@ namespace COMP4560_asgn5 {
             matrix[3, 3] = dd;
         }
 
+        public double[,] getArray() {
+            return matrix;
+        }
+
+        public static Matrix translationMatrix(Vec3 v) { return translationMatrix(v.x, v.y, v.z); }
         public static Matrix translationMatrix(double x, double y, double z)
         {
             Matrix m = new Matrix();
@@ -98,6 +106,43 @@ namespace COMP4560_asgn5 {
                     break;
             }
             return m;
+        }
+        
+        public static Matrix shearMatrix(double amount) {
+            Matrix m = new Matrix();
+            m.matrix[1, 0] = amount;
+            return m;
+        }
+
+        public void translate(Vec3 vec) { translate(vec.x, vec.y, vec.z); }
+        public void translate(Vec4 vec) { translate(vec.x, vec.y, vec.z); }
+        public void translate(double x, double y, double z) {
+            Matrix trans = translationMatrix(x, y, z);
+            Matrix result = this * trans;
+            matrix = result.matrix;
+        }
+
+        public void rotate(Axis a, double theta) {
+            Matrix rot = rotateMatrix(a, theta);
+            Matrix result = this * rot;
+            matrix = result.matrix;
+        }
+
+        public void scale(Vec4 v) { scale(v.x, v.y, v.z); }
+        public void scale(Vec3 v) { scale(v.x, v.y, v.z); }
+        public void scale(double s) { scale(s, s, s); }
+        public void scale(double x, double y, double z) {
+            Matrix scale = scaleMatrix(x, y, z);
+            Matrix result = this * scale;
+            matrix = result.matrix;
+        }
+
+        public void shear(double amount) {
+            matrix[1, 0] += amount;
+        }
+
+        public Vec3 getTranslate() {
+            return new Vec3(matrix[3, 0], matrix[3, 1], matrix[3, 2]);
         }
 
         public static Matrix operator *(Matrix lhs, Matrix rhs) 

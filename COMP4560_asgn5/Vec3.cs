@@ -10,7 +10,12 @@ namespace COMP4560_asgn5 {
         {
             this.x = x; 
             this.y = y; 
-            this.z = z; 
+            this.z = z;
+        }
+
+
+        public static Vec3 operator -(Vec3 unary) {
+            return new Vec3(-unary.x, -unary.y, -unary.z);
         }
     }
 }
