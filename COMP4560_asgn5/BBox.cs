@@ -19,7 +19,7 @@ namespace COMP4560_asgn5 {
             ymin = ymax = vertices[0, 1];
             zmin = zmax = vertices[0, 2];
 
-            for (int v = 1; v < vertices.GetLength(0); v++)
+            for (int v = 1; v < vertices.GetLength(0) - 1; v++)
             {
                 if (vertices[v, 0] < xmin) xmin = vertices[v, 0];
                 else if (vertices[v, 0] > xmax) xmax = vertices[v, 0];
