@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Timers;
 using System.Windows.Forms;
 
 namespace COMP4560_asgn5 {
@@ -22,6 +23,7 @@ namespace COMP4560_asgn5 {
         Matrix Center;
         Matrix Global;
         int[,] lines;
+        System.Timers.Timer aTimer;
 
         public Transformer() {
             //
@@ -206,12 +208,21 @@ namespace COMP4560_asgn5 {
 
         }
 
-        public override void Refresh() {
+        public void updateTransform() {
             Tnet = Shear * Center * Global;
+        }
+
+        public override void Refresh() {
+            updateTransform();
             base.Refresh();
         }
 
         private void toolBar1_ButtonClick(object sender, System.Windows.Forms.ToolBarButtonClickEventArgs e) {
+            if (aTimer != null) {
+                aTimer.Stop();
+                aTimer.Dispose();
+                aTimer = null;
+            }
             Vec3 offset;
 
             if (e.Button == transleftbtn) {
@@ -268,14 +279,13 @@ namespace COMP4560_asgn5 {
             }
 
             if (e.Button == rotxbtn) {
-
+                startRotateTimer(Matrix.Axis.X);
             }
             if (e.Button == rotybtn) {
-
+                startRotateTimer(Matrix.Axis.Y);
             }
-
             if (e.Button == rotzbtn) {
-
+                startRotateTimer(Matrix.Axis.Z);
             }
 
             if (e.Button == shearleftbtn) {
@@ -295,6 +305,27 @@ namespace COMP4560_asgn5 {
             if (e.Button == exitbtn) {
                 Close();
             }
+        }
+
+        private void startRotateTimer(Matrix.Axis axis) {
+            if (aTimer != null) {
+                aTimer.Enabled = false;
+                aTimer.Dispose();
+            }
+            aTimer = new System.Timers.Timer();
+            
+            aTimer.Elapsed += (s, e) => 
+            {
+                Vec3 offset = Global.getTranslate();
+                Global.translate(-offset);
+                Global.rotate(axis, 0.04);
+                Global.translate(offset);
+                updateTransform();
+                Invalidate();
+                startRotateTimer(axis);
+            };
+            aTimer.Interval = 30;
+            aTimer.Start();
         }
     }
 }
