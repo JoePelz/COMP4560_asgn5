@@ -73,9 +73,21 @@ namespace COMP4560_asgn5 {
                         scrnpts[i, j] = temp;
                     }
                 }
-
+                
+                #region Perspective Transform
+                //perspective code. Also in RestoreInitialImage()
+                Rectangle r = this.ClientRectangle;
+                r.Width -= toolBar1.Width;
+                for (int i = 0; i < numpts; i++) {
+                    //Since our coordinate system is set up with 0,0 in the top left, 
+                    //we need to transform back to origin before applying perspective.
+                    //1) translate to origin, 2) apply perspective, 3) translate back
+                    scrnpts[i, 0] = (scrnpts[i, 0] - r.Width / 2) / (scrnpts[i, 2] / 1000) + r.Width / 2;
+                    scrnpts[i, 1] = (scrnpts[i, 1] - r.Height / 2) / (scrnpts[i, 2] / 1000) + r.Height / 2;
+                }
+                #endregion
+                
                 //now draw the lines
-
                 for (int i = 0; i < numlines; i++) {
                     grfx.DrawLine(pen, (int)scrnpts[lines[i, 0], 0], (int)scrnpts[lines[i, 0], 1],
                         (int)scrnpts[lines[i, 1], 0], (int)scrnpts[lines[i, 1], 1]);
@@ -113,6 +125,19 @@ namespace COMP4560_asgn5 {
                 //Center and orient shape correctly
                 Center.translate(-mid);
                 Center.scale(1, -1, 1);
+
+                #region Perspective Transform
+                //also perspective code in OnPaint()
+                //Place just in front of camera (rather than intersecting) in Z
+                double depth = bbox.zmax - bbox.zmin;
+                Global.translate(0, 0, depth / 2);
+                //normalize into a 1x1x1 cube (based on the largest x or y range, but NOT z.
+                //This way, if you have a deep but short/thin object, 
+                //it'll still look decently sized on screen at the outset.
+                Global.scale(1.0 / Math.Max(bbox.xmax - bbox.xmin, bbox.ymax - bbox.ymin));
+                //Move it back so we can see it at all
+                Global.translate(0, 0, 2);
+                #endregion Perspective Transform
 
                 //Resize shape to be 1/3 of min client area
                 double factorx = r.Width / ((bbox.xmax - bbox.xmin) * 2);
