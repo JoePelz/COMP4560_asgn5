@@ -13,15 +13,15 @@ using System.Windows.Forms;
 
 namespace COMP4560_asgn5 {
     public partial class Transformer : Form {
-        int numpts = 0;
         int numlines = 0;
         bool gooddata = false;
-        double[,] vertices;
-        double[,] scrnpts;
+        Vec4[] vertices;
+        Vec4[] scrnpts;
         Matrix Tnet = new Matrix();  //your main transformation matrix
         Matrix Shear;
         Matrix Center;
         Matrix Global;
+        Matrix Perspective;
         int[,] lines;
         System.Timers.Timer aTimer;
 
@@ -50,47 +50,47 @@ namespace COMP4560_asgn5 {
             MenuItem miAbout = new MenuItem("&About",
                 new EventHandler(MenuAboutOnClick));
             Menu = new MainMenu(new MenuItem[] { miFile, miAbout });
-        }
+         }
 
         protected override void OnPaint(PaintEventArgs pea) {
             Graphics grfx = pea.Graphics;
             Pen pen = new Pen(Color.White, 3);
-            double temp;
-            int k;
-
-
+            
             if (gooddata) {
                 //create the screen coordinates:
                 // scrnpts = vertices*ctrans
                 double[,] mt = Tnet.getArray();
-
-
-                for (int i = 0; i < numpts; i++) {
-                    for (int j = 0; j < 4; j++) {
-                        temp = 0.0d;
-                        for (k = 0; k < 4; k++)
-                            temp += vertices[i, k] * mt[k, j];
-                        scrnpts[i, j] = temp;
-                    }
+                
+                for (int i = 0; i < vertices.Length; i++) {
+                    scrnpts[i] = vertices[i] * Tnet;
                 }
+
                 
                 #region Perspective Transform
-                //perspective code. Also in RestoreInitialImage()
-                Rectangle r = this.ClientRectangle;
+                    //perspective code. Also in RestoreInitialImage()
+                    Rectangle r = this.ClientRectangle;
                 r.Width -= toolBar1.Width;
-                for (int i = 0; i < numpts; i++) {
+
+                Vec4 offset = new Vec4(r.Width / 2, r.Height / 2, 0);
+                for (int i = 0; i < vertices.Length; i++) {
                     //Since our coordinate system is set up with 0,0 in the top left, 
                     //we need to transform back to origin before applying perspective.
-                    //1) translate to origin, 2) apply perspective, 3) translate back
-                    scrnpts[i, 0] = (scrnpts[i, 0] - r.Width / 2) / (scrnpts[i, 2] / 1000) + r.Width / 2;
-                    scrnpts[i, 1] = (scrnpts[i, 1] - r.Height / 2) / (scrnpts[i, 2] / 1000) + r.Height / 2;
+                    //1) translate screen center to origin, 2) apply perspective, 3) translate back
+                    scrnpts[i].offset(-offset);
+                    scrnpts[i] = scrnpts[i] * Perspective;
+                    scrnpts[i].normalizeH();
+                    scrnpts[i].offset(offset);
                 }
                 #endregion
-                
+
+                while (true) break;
                 //now draw the lines
                 for (int i = 0; i < numlines; i++) {
-                    grfx.DrawLine(pen, (int)scrnpts[lines[i, 0], 0], (int)scrnpts[lines[i, 0], 1],
-                        (int)scrnpts[lines[i, 1], 0], (int)scrnpts[lines[i, 1], 1]);
+                    grfx.DrawLine(pen, 
+                        (float)scrnpts[lines[i, 0]].x, 
+                        (float)scrnpts[lines[i, 0]].y, 
+                        (float)scrnpts[lines[i, 1]].x, 
+                        (float)scrnpts[lines[i, 1]].y);
                 }
 
 
@@ -125,29 +125,46 @@ namespace COMP4560_asgn5 {
                 //Center and orient shape correctly
                 Center.translate(-mid);
                 Center.scale(1, -1, 1);
-
+                
+                
                 #region Perspective Transform
                 //also perspective code in OnPaint()
                 //Place just in front of camera (rather than intersecting) in Z
                 double depth = bbox.zmax - bbox.zmin;
                 Global.translate(0, 0, depth / 2);
-                //normalize into a 1x1x1 cube (based on the largest x or y range, but NOT z.
+                //normalize positions to a 1x1x1 cube (based on the largest x or y range, but NOT z.)
                 //This way, if you have a deep but short/thin object, 
                 //it'll still look decently sized on screen at the outset.
-                Global.scale(1.0 / Math.Max(bbox.xmax - bbox.xmin, bbox.ymax - bbox.ymin));
+                Global.scale((r.Width / 4) / Math.Max(bbox.xmax - bbox.xmin, bbox.ymax - bbox.ymin));
                 //Move it back so we can see it at all
                 Global.translate(0, 0, 2);
+
+                //Create perspective matrix
+                //Our range of U and V values are the width and height of our screen, 
+                //    so move the camera back proportionally to that.
+                double hfov = Math.PI / 3; // 60 degrees
+                double EyeN = -r.Width / (2 * Math.Tan(hfov / 2));
+                Perspective = new Matrix(
+                    1, 0, 0, 0,
+                    0, 1, 0, 0,
+                    0, 0, 1, (-1 / EyeN),
+                    0, 0, 0, 1);
+
                 #endregion Perspective Transform
 
-                //Resize shape to be 1/3 of min client area
+
+                //Resize shape to be 1/2 of min client area
                 double factorx = r.Width / ((bbox.xmax - bbox.xmin) * 2);
                 double factory = r.Height / ((bbox.ymax - bbox.ymin) * 2);
-                Global.scale(Math.Min(factory, factorx));
+                //Global.scale(Math.Min(factory, factorx));
 
                 //Center shape on screen
                 Global.translate((r.Width) / 2, r.Height / 2, 0);
+                
             }
             Tnet = Center * Global;
+
+
             Invalidate();
         } // end of RestoreInitialImage
 
@@ -187,25 +204,25 @@ namespace COMP4560_asgn5 {
                 MessageBox.Show("***Failed to Open Line Data File***");
                 return false;
             }
-            scrnpts = new double[numpts, 4];
+            scrnpts = new Vec4[vertices.Length];
             return true;
         } // end of GetNewData
 
         void DecodeCoords(ArrayList coorddata) {
             //this may allocate slightly more rows that necessary
-            vertices = new double[coorddata.Count, 4];
-            numpts = 0;
+            vertices = new Vec4[coorddata.Count];
+            int numpts = 0;
             string[] text = null;
             for (int i = 0; i < coorddata.Count; i++) {
                 text = coorddata[i].ToString().Split(' ', ',');
-                vertices[numpts, 0] = double.Parse(text[0]);
-                if (vertices[numpts, 0] < 0.0d) break;
-                vertices[numpts, 1] = double.Parse(text[1]);
-                vertices[numpts, 2] = double.Parse(text[2]);
-                vertices[numpts, 3] = 1.0d;
-                numpts++;
+                if (text.Length >= 3) {
+                    vertices[numpts] = new Vec4(double.Parse(text[0]), double.Parse(text[1]), double.Parse(text[2]));
+                    numpts++;
+                } else {
+                    break;
+                }
             }
-
+            Array.Resize<Vec4>(ref vertices, numpts);
         }// end of DecodeCoords
 
         void DecodeLines(ArrayList linesdata) {
@@ -228,10 +245,6 @@ namespace COMP4560_asgn5 {
                 A[i, i] = 1.0d;
             }
         }// end of setIdentity
-        
-        private void Transformer_Load(object sender, System.EventArgs e) {
-
-        }
 
         public void updateTransform() {
             Tnet = Shear * Center * Global;

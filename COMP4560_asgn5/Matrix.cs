@@ -169,22 +169,22 @@ namespace COMP4560_asgn5 {
                 = rhs.matrix[0, 0] * lhs.x
                 + rhs.matrix[1, 0] * lhs.y
                 + rhs.matrix[2, 0] * lhs.z
-                + rhs.matrix[3, 0] * lhs.w;
+                + rhs.matrix[3, 0] * lhs.h;
             result.y
                 = rhs.matrix[0, 1] * lhs.x
                 + rhs.matrix[1, 1] * lhs.y
                 + rhs.matrix[2, 1] * lhs.z
-                + rhs.matrix[3, 1] * lhs.w;
+                + rhs.matrix[3, 1] * lhs.h;
             result.z
                 = rhs.matrix[0, 2] * lhs.x
                 + rhs.matrix[1, 2] * lhs.y
                 + rhs.matrix[2, 2] * lhs.z
-                + rhs.matrix[3, 2] * lhs.w;
-            result.w
+                + rhs.matrix[3, 2] * lhs.h;
+            result.h
                 = rhs.matrix[0, 3] * lhs.x
                 + rhs.matrix[1, 3] * lhs.y
                 + rhs.matrix[2, 3] * lhs.z
-                + rhs.matrix[3, 3] * lhs.w;
+                + rhs.matrix[3, 3] * lhs.h;
             return result;
         }
 
@@ -194,7 +194,26 @@ namespace COMP4560_asgn5 {
         public static bool operator !=(Matrix lhs, Matrix rhs) {
             return !(lhs == rhs);
         }
+        public override bool Equals(object obj) {
+            if (obj == null) return false;
+
+            Matrix m = obj as Matrix;
+            if ((Object)m == null) {
+                return false;
+            }
+
+            for (int x = 0; x < 4; x++) {
+                for (int y = 0; y < 4; y++) {
+                    if (Math.Abs(matrix[x, y] - m.matrix[x, y]) > 0.00001) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
         public bool Equals(Matrix obj) {
+            if ((Object)obj == null) return false;
+
             for(int x = 0; x < 4; x++) {
                 for (int y = 0; y < 4; y++) {
                     if (Math.Abs(matrix[x,y] - obj.matrix[x,y]) > 0.00001) {

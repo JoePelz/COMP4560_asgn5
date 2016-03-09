@@ -31,6 +31,29 @@ namespace COMP4560_asgn5 {
                 else if (vertices[v, 2] > zmax) zmax = vertices[v, 2];
             }
         }
+        public BBox(Vec4[] vertices) {
+            if (vertices == null || vertices.Length == 0) {
+                throw new ArgumentException();
+            }
+            xmin = xmax = vertices[0].x;
+            ymin = ymax = vertices[0].y;
+            zmin = zmax = vertices[0].z;
+
+            for (int v = 1; v < vertices.GetLength(0) - 1; v++) {
+                if (vertices[v] == null) break;
+
+                if (vertices[v].x < xmin) xmin = vertices[v].x;
+                else if (vertices[v].x > xmax) xmax = vertices[v].x;
+
+                if (vertices[v].y < ymin) ymin = vertices[v].y;
+                else if (vertices[v].y > ymax) ymax = vertices[v].y;
+
+                if (vertices[v].z < zmin) zmin = vertices[v].z;
+                else if (vertices[v].z > zmax) zmax = vertices[v].z;
+            }
+        }
+
+
         public Vec3 getCenter()
         {
             return new Vec3((xmax + xmin) / 2, (ymax + ymin) / 2, (zmax + zmin) / 2);

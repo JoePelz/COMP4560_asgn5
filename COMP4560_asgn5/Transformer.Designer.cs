@@ -256,7 +256,6 @@
             this.Controls.Add(this.toolBar1);
             this.Name = "Transformer";
             this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
-            this.Load += new System.EventHandler(this.Transformer_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
 
