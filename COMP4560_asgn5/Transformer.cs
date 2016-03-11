@@ -81,7 +81,8 @@ namespace COMP4560_asgn5 {
                     scrnpts[i].normalizeH();
                     scrnpts[i].offset(offset);
                 }
-                #endregion
+                #endregion Perspective Transform
+                
 
                 while (true) break;
                 //now draw the lines
@@ -132,12 +133,6 @@ namespace COMP4560_asgn5 {
                 //Place just in front of camera (rather than intersecting) in Z
                 double depth = bbox.zmax - bbox.zmin;
                 Global.translate(0, 0, depth / 2);
-                //normalize positions to a 1x1x1 cube (based on the largest x or y range, but NOT z.)
-                //This way, if you have a deep but short/thin object, 
-                //it'll still look decently sized on screen at the outset.
-                Global.scale((r.Width / 4) / Math.Max(bbox.xmax - bbox.xmin, bbox.ymax - bbox.ymin));
-                //Move it back so we can see it at all
-                Global.translate(0, 0, 2);
 
                 //Create perspective matrix
                 //Our range of U and V values are the width and height of our screen, 
@@ -149,14 +144,11 @@ namespace COMP4560_asgn5 {
                     0, 1, 0, 0,
                     0, 0, 1, (-1 / EyeN),
                     0, 0, 0, 1);
-
                 #endregion Perspective Transform
 
 
                 //Resize shape to be 1/2 of min client area
-                double factorx = r.Width / ((bbox.xmax - bbox.xmin) * 2);
-                double factory = r.Height / ((bbox.ymax - bbox.ymin) * 2);
-                //Global.scale(Math.Min(factory, factorx));
+                Global.scale((Math.Min(r.Width, r.Height) / 2) / Math.Max(bbox.xmax - bbox.xmin, bbox.ymax - bbox.ymin));
 
                 //Center shape on screen
                 Global.translate((r.Width) / 2, r.Height / 2, 0);
