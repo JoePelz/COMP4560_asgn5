@@ -124,7 +124,7 @@
             this.toolBar1.Location = new System.Drawing.Point(484, 0);
             this.toolBar1.Name = "toolBar1";
             this.toolBar1.ShowToolTips = true;
-            this.toolBar1.Size = new System.Drawing.Size(24, 306);
+            this.toolBar1.Size = new System.Drawing.Size(24, 487);
             this.toolBar1.TabIndex = 0;
             this.toolBar1.ButtonClick += new System.Windows.Forms.ToolBarButtonClickEventHandler(this.toolBar1_ButtonClick);
             // 
@@ -252,7 +252,7 @@
             // Transformer
             // 
             this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
-            this.ClientSize = new System.Drawing.Size(508, 306);
+            this.ClientSize = new System.Drawing.Size(508, 487);
             this.Controls.Add(this.toolBar1);
             this.Name = "Transformer";
             this.WindowState = System.Windows.Forms.FormWindowState.Maximized;

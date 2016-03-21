@@ -23,6 +23,11 @@ namespace COMP4560_asgn5 {
         Matrix Global;
         Matrix Perspective;
         int[,] lines;
+        bool bPerspective; //bool indicating whether to use perspective
+        bool bmdown; //if the mouse button is pressed
+        Point mdown; //point where mouse button was pressed down
+        Matrix mdragRotation; //rotation matrix from dragging the mouse
+
         System.Timers.Timer aTimer;
 
         public Transformer() {
@@ -44,13 +49,28 @@ namespace COMP4560_asgn5 {
                 new EventHandler(MenuNewDataOnClick));
             MenuItem miExit = new MenuItem("E&xit",
                 new EventHandler(MenuFileExitOnClick));
+            MenuItem miPersp = new MenuItem("&Perspective",
+                new EventHandler(MenuFileTogglePerspective));
             MenuItem miDash = new MenuItem("-");
+            MenuItem miDash2 = new MenuItem("-");
             MenuItem miFile = new MenuItem("&File",
-                new MenuItem[] { miNewDat, miDash, miExit });
+                new MenuItem[] { miNewDat, miDash, miPersp, miDash2, miExit });
             MenuItem miAbout = new MenuItem("&About",
                 new EventHandler(MenuAboutOnClick));
             Menu = new MainMenu(new MenuItem[] { miFile, miAbout });
+
+            mdragRotation = new Matrix();
          }
+
+        private void MenuFileTogglePerspective(object sender, EventArgs e) {
+            MenuItem miPersp = (sender as MenuItem);
+            if (!miPersp.Checked) {
+                InitializePerspective();
+            }
+            bPerspective = !miPersp.Checked;
+            miPersp.Checked = bPerspective;
+            Invalidate();
+        }
 
         protected override void OnPaint(PaintEventArgs pea) {
             Graphics grfx = pea.Graphics;
@@ -66,24 +86,22 @@ namespace COMP4560_asgn5 {
                 }
 
                 
-                #region Perspective Transform
-                    //perspective code. Also in RestoreInitialImage()
+                if (bPerspective) {
                     Rectangle r = this.ClientRectangle;
-                r.Width -= toolBar1.Width;
+                    r.Width -= toolBar1.Width;
 
-                Vec4 offset = new Vec4(r.Width / 2, r.Height / 2, 0);
-                for (int i = 0; i < vertices.Length; i++) {
-                    //Since our coordinate system is set up with 0,0 in the top left, 
-                    //we need to transform back to origin before applying perspective.
-                    //1) translate screen center to origin, 2) apply perspective, 3) translate back
-                    scrnpts[i].offset(-offset);
-                    scrnpts[i] = scrnpts[i] * Perspective;
-                    scrnpts[i].normalizeH();
-                    scrnpts[i].offset(offset);
+                    Vec4 offset = new Vec4(r.Width / 2, r.Height / 2, 0);
+                    for (int i = 0; i < vertices.Length; i++) {
+                        //Since our coordinate system is set up with 0,0 in the top left, 
+                        //we need to transform back to origin before applying perspective.
+                        //1) translate screen center to origin, 2) apply perspective, 3) translate back
+                        scrnpts[i].offset(-offset);
+                        scrnpts[i] = scrnpts[i] * Perspective;
+                        scrnpts[i].normalizeH();
+                        scrnpts[i].offset(offset);
+                    }
                 }
-                #endregion Perspective Transform
                 
-
                 while (true) break;
                 //now draw the lines
                 for (int i = 0; i < numlines; i++) {
@@ -113,6 +131,30 @@ namespace COMP4560_asgn5 {
             dlg.ShowDialog();
         }
 
+        void InitializePerspective() {
+            if (vertices == null || vertices.Length == 0) {
+                return;
+            }
+
+            BBox bbox = new BBox(vertices);
+            Rectangle r = this.ClientRectangle;
+            r.Width -= toolBar1.Width;
+            //Place just in front of camera (rather than intersecting) in Z
+            double depth = bbox.zmax - bbox.zmin;
+            Global.translate(0, 0, depth / 2);
+
+            //Create perspective matrix
+            //Our range of U and V values are the width and height of our screen, 
+            //    so move the camera back proportionally to that.
+            double hfov = Math.PI / 2; // 90 degrees viewing angle
+            double EyeN = -r.Width / (2 * Math.Tan(hfov / 2));
+            Perspective = new Matrix(
+                1, 0, 0, 0,
+                0, 1, 0, 0,
+                0, 0, 1, (-1 / EyeN),
+                0, 0, 0, 1);
+        }
+
         void RestoreInitialImage() {
             if (gooddata) {
                 BBox bbox = new BBox(vertices);
@@ -126,37 +168,20 @@ namespace COMP4560_asgn5 {
                 //Center and orient shape correctly
                 Center.translate(-mid);
                 Center.scale(1, -1, 1);
-                
-                
-                #region Perspective Transform
-                //also perspective code in OnPaint()
-                //Place just in front of camera (rather than intersecting) in Z
-                double depth = bbox.zmax - bbox.zmin;
-                Global.translate(0, 0, depth / 2);
 
-                //Create perspective matrix
-                //Our range of U and V values are the width and height of our screen, 
-                //    so move the camera back proportionally to that.
-                double hfov = Math.PI / 3; // 60 degrees
-                double EyeN = -r.Width / (2 * Math.Tan(hfov / 2));
-                Perspective = new Matrix(
-                    1, 0, 0, 0,
-                    0, 1, 0, 0,
-                    0, 0, 1, (-1 / EyeN),
-                    0, 0, 0, 1);
-                #endregion Perspective Transform
+                if (bPerspective)
+                    InitializePerspective();
 
-
-                //Resize shape to be 1/2 of min client area
-                Global.scale((Math.Min(r.Width, r.Height) / 2) / Math.Max(bbox.xmax - bbox.xmin, bbox.ymax - bbox.ymin));
+                //Resize shape to be 1/2 of smallest client dimension
+                double scaleFactor = (Math.Min(r.Width, r.Height) / 2) / Math.Max(bbox.xmax - bbox.xmin, bbox.ymax - bbox.ymin);
+                Global.scale(scaleFactor, scaleFactor, scaleFactor);
 
                 //Center shape on screen
                 Global.translate((r.Width) / 2, r.Height / 2, 0);
                 
             }
             Tnet = Center * Global;
-
-
+            
             Invalidate();
         } // end of RestoreInitialImage
 
@@ -239,7 +264,7 @@ namespace COMP4560_asgn5 {
         }// end of setIdentity
 
         public void updateTransform() {
-            Tnet = Shear * Center * Global;
+            Tnet = Shear * Center * Global * mdragRotation;
         }
 
         public override void Refresh() {
@@ -356,6 +381,37 @@ namespace COMP4560_asgn5 {
             };
             aTimer.Interval = 30;
             aTimer.Start();
+        }
+
+        protected override void OnMouseDown(MouseEventArgs e) {
+            mdown = e.Location;
+            bmdown = true;
+        }
+
+        protected override void OnMouseMove(MouseEventArgs e) {
+            base.OnMouseMove(e);
+            if (!bmdown) {
+                return;
+            }
+            PointF delta = new PointF((e.X - mdown.X) / (float)ClientRectangle.Width, (e.Y - mdown.Y) / (float)ClientRectangle.Height); //change in position
+            Vec3 offset = Global.getTranslate();
+            mdragRotation = new Matrix();
+            mdragRotation.translate(-offset);
+            mdragRotation.rotate(Matrix.Axis.Y, -delta.X * 4.0);
+            mdragRotation.rotate(Matrix.Axis.X, delta.Y * 4.0);
+            mdragRotation.translate(offset);
+
+            updateTransform();
+            Invalidate();
+        }
+
+        protected override void OnMouseUp(MouseEventArgs e) {
+            base.OnMouseUp(e);
+            bmdown = false;
+            Global *= mdragRotation;
+            mdragRotation = new Matrix();
+            updateTransform();
+            Invalidate();
         }
     }
 }

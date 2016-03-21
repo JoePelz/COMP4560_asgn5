@@ -52,8 +52,7 @@ namespace COMP4560_asgn5 {
                 else if (vertices[v].z > zmax) zmax = vertices[v].z;
             }
         }
-
-
+        
         public Vec3 getCenter()
         {
             return new Vec3((xmax + xmin) / 2, (ymax + ymin) / 2, (zmax + zmin) / 2);
