@@ -156,30 +156,31 @@ namespace COMP4560_asgn5 {
         }
 
         void RestoreInitialImage() {
-            if (gooddata) {
-                BBox bbox = new BBox(vertices);
-                Vec3 mid = bbox.getCenter();
-                Rectangle r = this.ClientRectangle;
-                r.Width -= toolBar1.Width;
-                Center = new Matrix();
-                Global = new Matrix();
-                Shear = new Matrix();
-
-                //Center and orient shape correctly
-                Center.translate(-mid);
-                Center.scale(1, -1, 1);
-
-                if (bPerspective)
-                    InitializePerspective();
-
-                //Resize shape to be 1/2 of smallest client dimension
-                double scaleFactor = (Math.Min(r.Width, r.Height) / 2) / Math.Max(bbox.xmax - bbox.xmin, bbox.ymax - bbox.ymin);
-                Global.scale(scaleFactor, scaleFactor, scaleFactor);
-
-                //Center shape on screen
-                Global.translate((r.Width) / 2, r.Height / 2, 0);
-                
+            if (!gooddata) {
+                return;
             }
+            BBox bbox = new BBox(vertices);
+            Vec3 mid = bbox.getCenter();
+            Rectangle r = this.ClientRectangle;
+            r.Width -= toolBar1.Width;
+            Center = new Matrix();
+            Global = new Matrix();
+            Shear = new Matrix();
+
+            //Center and orient shape correctly
+            Center.translate(-mid);
+            Center.scale(1, -1, 1);
+
+            if (bPerspective)
+                InitializePerspective();
+
+            //Resize shape to be 1/2 of smallest client dimension
+            double scaleFactor = (Math.Min(r.Width, r.Height) / 2) / Math.Max(bbox.xmax - bbox.xmin, bbox.ymax - bbox.ymin);
+            Global.scale(scaleFactor, scaleFactor, scaleFactor);
+
+            //Center shape on screen
+            Global.translate((r.Width) / 2, r.Height / 2, 0);
+                
             Tnet = Center * Global;
             
             Invalidate();
